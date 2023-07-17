@@ -1,0 +1,87 @@
+{{ if eq .Values.profile "local" }}
+
+{{ else if eq .Values.profile "dev" }}
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    "meta.helm.sh/release-name": {{ $.Chart.Name | quote }}
+    "meta.helm.sh/release-namespace": {{ index .Values.namespace .Values.profile | quote }}
+  labels:
+    app: {{ .Values.name }}
+    router: {{ .Values.profile }}
+    app.kubernetes.io/managed-by: Helm
+  name: {{ .Values.name }}-admin
+  namespace: {{ index .Values.namespace .Values.profile }}
+spec:
+  host: {{ .Values.route.host.dev.dashboard }} 
+  path: {{ .Values.route.path }}
+  port:
+    targetPort: restful
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: None
+  to:
+    kind: Service
+    name: {{ .Values.name }}
+    weight: 100
+  wildcardPolicy: None
+
+---
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    "meta.helm.sh/release-name": {{ $.Chart.Name | quote }}
+    "meta.helm.sh/release-namespace": {{ index .Values.namespace .Values.profile | quote }}
+  labels:
+    app: {{ .Values.name }}
+    router: {{ .Values.profile }}
+    app.kubernetes.io/managed-by: Helm
+  name: {{ .Values.name }}
+  namespace: {{ index .Values.namespace .Values.profile }}
+spec:
+  host: {{ .Values.route.host.dev.mobile }} 
+  path: {{ .Values.route.path }}
+  port:
+    targetPort: restful
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: None
+  to:
+    kind: Service
+    name: {{ .Values.name }}
+    weight: 100
+  wildcardPolicy: None
+
+{{ else }}
+
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    "meta.helm.sh/release-name": {{ $.Chart.Name | quote }}
+    "meta.helm.sh/release-namespace": {{ index .Values.namespace .Values.profile | quote }}
+  labels:
+    app: {{ .Values.name }}
+    router: {{ .Values.profile }}
+    app.kubernetes.io/managed-by: Helm
+  name: {{ .Values.name }}
+  namespace: {{ index .Values.namespace .Values.profile }}
+spec:
+  host: {{ index .Values.route.host .Values.profile }} 
+  path: {{ .Values.route.path }}
+  port:
+    targetPort: restful
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: None
+  to:
+    kind: Service
+    name: {{ .Values.name }}
+    weight: 100
+  wildcardPolicy: None
+
+{{ end }}

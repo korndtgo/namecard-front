@@ -1,0 +1,47 @@
+{{- range $migrate_name, $migrate_value := .Values.migrations }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $migrate_name }}
+  namespace: {{ index $.Values.namespace $.Values.profile }}
+  labels: 
+    app: {{ $.Values.name }}
+    system: migration
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "1"
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: {{ $.Values.name }}
+        system: migration
+    spec:
+      containers:
+      - name: {{ $migrate_name }}
+        image:  "{{ $.Values.registry }}/{{ $migrate_name }}:{{ $.Values.tag }}"
+        resources:
+          limits:
+            memory: 100Mi
+            cpu: 5m
+          requests:
+            memory: 50Mi
+            cpu: 1m
+        {{ if eq $.Values.profile "local"}}
+        imagePullPolicy: Never 
+        {{ else }}
+        imagePullPolicy: {{ $.Values.imagePullPolicy }}
+        {{ end }}
+        args: [ "-version={{ .version }}" ]
+        env:
+          - name: DB
+            valueFrom:
+              configMapKeyRef:
+                name: {{ $.Values.name }}-configmap
+                key: DBConCampaign
+      imagePullSecrets:
+        - name: {{ (index $.Values.imagePullSecrets $.Values.profile) }}
+      restartPolicy: Never
+---
+{{- end }}

@@ -1,0 +1,128 @@
+name: campaign-service
+namespace:
+  local: "investlocal"
+  dev: "investment-dev"
+  sit: "investdev"
+  uat: "investuat"
+
+migrations:
+  campaign-migration:
+    version: 0
+
+cronjobs:
+  
+
+configs:
+  local:
+    # DBConTradings: sqlserver://sqlserver:1qaz2wsx@34.87.101.139:1433?database=Fund-Oms
+    DBConCampaign: sqlserver://sa:example-db123@host.minikube.internal:1433?database=lh_campaign
+    ENV: develop
+    Port: 7017
+    PortRestful: 7071
+    Locale: Asia/Bangkok
+    LogFormat:
+    LogLevel: debug
+    IsEnableProtoV1: true
+    IsEnableProtoV2: true
+    IsDebugDB: false
+    PlanService: plan-service:8080
+    PortService: trading-port-service:8080
+    TransferService: trading-transfer-service:8080
+    RoboAdvisorService: "robo-advisor-service:8080"
+    AESSecretKey: "12345678901234561234567890123456"
+    SessionTimeout: "15"
+    PrivateKeyPath: "cert/health_check/private.key"
+    PublicKeyPath: "cert/health_check/public.key"
+    CallbackHost: "http://robo-conductor-service:7011"
+    DcaTPlus : 1
+    AccountOpeningService: account-opening-service:10002
+    EnterpriseService: enterprise-service:8081
+    MessagingAMQPUri: "amqp://admin:codefin1234!@openshift-rabbitmq-2:5672/"
+  dev:
+    DBConCampaign: sqlserver://sqlserver:1qaz2wsx@34.87.101.139:1433?database=lh_campaign
+    ENV: production
+    Port: 7017
+    PortRestful: 7071
+    Locale: Asia/Bangkok
+    LogFormat:
+    LogLevel: debug
+    IsEnableProtoV1: true
+    IsEnableProtoV2: true
+    IsDebugDB: false
+    PlanService: plan-service:8080
+    PortService: trading-port-service:8080
+    TransferService: trading-transfer-service:8080
+    RoboAdvisorService: "robo-advisor-service:8080"
+    AESSecretKey: "12345678901234561234567890123456"
+    SessionTimeout: "15"
+    PrivateKeyPath: "cert/health_check/private.key"
+    PublicKeyPath: "cert/health_check/public.key"
+    CallbackHost: "http://robo-conductor-service:7011"
+    DcaTPlus : 1
+    AccountOpeningService: account-opening-service:8080
+    EnterpriseService: enterprise-service:8081
+    MessagingAMQPUri: "amqp://admin:codefin1234!@openshift-rabbitmq-2:5672/"
+  sit:
+    DBConCampaign: sqlserver://investdev:LHB@1234@w2dbsdho101ocp?database=cf_sit_campaign&connection+timeout=30
+    ENV: production
+    Port: 7017
+    PortRestful: 7071
+    Locale: Asia/Bangkok
+    LogFormat:
+    LogLevel: debug
+    IsEnableProtoV1: true
+    IsEnableProtoV2: true
+    IsDebugDB: false
+    PlanService: plan-service:8080
+    PortService: trading-port-service:8080
+    TransferService: trading-transfer-service:8080
+    RoboAdvisorService: "robo-advisor-service:8080"
+    AESSecretKey: "12345678901234561234567890123456"
+    SessionTimeout: "15"
+    PrivateKeyPath: "cert/health_check/private.key"
+    PublicKeyPath: "cert/health_check/public.key"
+    CallbackHost: "http://robo-conductor-service:7011"
+    DcaTPlus : 1
+    AccountOpeningService: account-opening-service:9090
+    EnterpriseService: enterprise-service:8081
+    MessagingAMQPUri: "amqp://admin:codefin1234!@baseimagesrabbitmq:5672/"
+  uat:
+    DBConCampaign: sqlserver://investuat:Lhb2021+@W2DBSUHO101OCP:1433?database=cf_uat_campaign&connection+timeout=30
+    ENV: production
+    Port: 7017
+    PortRestful: 7071
+    Locale: Asia/Bangkok
+    LogFormat:
+    LogLevel: debug
+    IsEnableProtoV1: true
+    IsEnableProtoV2: true
+    IsDebugDB: false
+    AESSecretKey: "12345678901234561234567890123456"
+    SessionTimeout: "15"
+    PublicKeyPath: "cert/health_check/public.key"
+    MessagingAMQPUri: "amqp://admin:codefin1234!@baseimagesrabbitmq:5672/"
+replicaCount: "1"
+
+imagePullPolicy: Always
+imagePullSecrets:
+  local: regcred
+  dev: private-registry
+  sit: harbor-pull-secret
+  uat: harbor-pull-secret
+
+claimName:
+  dev:
+    tmp: account-openning-img-pvc-investment-dev
+  sit:
+    tmp: nfs-claim-dev
+  uat:
+    tmp: nfs-claim-uat
+
+route:
+  path: /api/campaign-service
+  host:
+    dev:
+      mobile: lh-client-gateway.codefin.dev 
+      dashboard: lh-backoffice-dev.codefin.dev
+    sit: sit-profita.apps.nonprod.lhb.net
+    uat: uat-profita.apps.uat.lhb.net

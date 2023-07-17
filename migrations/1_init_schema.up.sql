@@ -1,0 +1,26 @@
+CREATE TABLE namecard_card
+(
+    id serial NOT NULL,
+    uuid VARCHAR(36) NOT NULL,
+    employee_id VARCHAR(36) NULL,
+    name_th VARCHAR(255) NULL,
+    name_en VARCHAR(512)  NULL,
+    surname_th VARCHAR(512)  NULL,
+    surname_en VARCHAR NULL,
+    nickname_th VARCHAR NULL,
+    nickname_en VARCHAR(512) NULL,
+    email VARCHAR(512) NULL,
+    contact_number_1 VARCHAR(512) NULL,
+    contact_number_2 VARCHAR(512) NULL,
+    line_id VARCHAR(512) NULL,
+    position_th VARCHAR(512) NULL,
+    position_en VARCHAR(512) NULL,
+    department_th VARCHAR(512) NULL,
+    department_en VARCHAR(512) NULL,
+    company_id int NULL,
+    is_active boolean DEFAULT TRUE NOT NULL,
+    created_at timestamp without time zone DEFAULT NOW() NOT NULL,
+    updated_at timestamp without time zone DEFAULT NOW() NOT NULL,
+    deleted_at timestamp without time zone DEFAULT NOW() NOT NULL,
+    CONSTRAINT PK_namecard_card PRIMARY KEY (id)
+);

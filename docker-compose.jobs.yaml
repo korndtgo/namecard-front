@@ -1,0 +1,29 @@
+version: "3.9"
+services:
+  robo-dca-order-job:
+    container_name: robo-dca-order-job
+    image: ${REGISTRY}/campaign-service:${TAG:-latest}
+    command: /app/bin/dca-order-job
+    environment:
+      - PLAN_SERVICE=plan-service:7005
+      - PORT_SERVICE=trading-port-service:7001
+      - TRANSFER_SERVICE=trading-transfer-service:9090
+      - ROBO_ADVISOR_SERVICE=robo-advisor-service:10001
+      - AES_SECRET_KEY=12345678901234561234567890123456
+      - PRIVATE_KEY_PATH=cert/health_check/private.key
+      - PUBLIC_KEY_PATH=cert/health_check/public.key
+      - SESSION_TIMEOUT=15
+      - DB_CON_CAMPAIGN=sqlserver://sa:example-db123@lh-db:1433?database=${db}
+      - DB_CON_ROBO_CONDUCTOR=sqlserver://sa:example-db123@lh-db:1433?database=${db}
+      - ROBO_CONDUCTOR_SERVICE=robo-coductor-service:7007
+      - URI_CALLBACK_ORDER_INVEST=/api/campaign-service/v1/robo-investment
+    networks:
+      - lh_network
+    logging:
+      options:
+        max-size: 10m
+        max-file: "10"
+
+networks:
+  lh_network:
+    external: true

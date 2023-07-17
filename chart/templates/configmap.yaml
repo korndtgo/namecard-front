@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.name }}-configmap
+  annotations:
+    "meta.helm.sh/release-name": {{ $.Chart.Name | quote }}
+    "meta.helm.sh/release-namespace": {{ index .Values.namespace .Values.profile | quote }}
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "0"
+  labels:
+    name: {{ .Values.name }}-configmap
+    app.kubernetes.io/managed-by: "Helm"    
+  namespace: {{ (index .Values.namespace .Values.profile) }}
+data:
+# DATABASE
+  DBConCampaign: "{{ (index .Values.configs .Values.profile).DBConCampaign }}"
+  
+# SECRET ENV
+  PublicKeyPath: "{{ (index .Values.configs .Values.profile).PublicKeyPath }}"
+  AESSecretKey: "{{ (index .Values.configs .Values.profile).AESSecretKey }}"
+  MessagingAMQPUri: "{{ (index .Values.configs .Values.profile).MessagingAMQPUri }}"
+
+# COMMON
+  ENV: "{{ (index .Values.configs .Values.profile).ENV }}"
+  Locale: "{{ (index .Values.configs .Values.profile).Locale }}"
+  LogFormat: "{{ (index .Values.configs .Values.profile).LogFormat }}"
+  LogLevel: "{{ (index .Values.configs .Values.profile).LogLevel }}"
+  IsEnableProtoV1: "{{ (index .Values.configs .Values.profile).IsEnableProtoV1 }}"
+  IsEnableProtoV2: "{{ (index .Values.configs .Values.profile).IsEnableProtoV2 }}"
+  IsDebugDB: "{{ (index .Values.configs .Values.profile).IsDebugDB }}"
+  SessionTimeout: "{{ (index .Values.configs .Values.profile).SessionTimeout }}"
+
+  # CONNECTION
+  Port: "{{ (index .Values.configs .Values.profile).Port }}"
+  PortRestful: "{{ (index .Values.configs .Values.profile).PortRestful }}"

@@ -1,0 +1,60 @@
+version: "3.9"
+services:
+  campaign-service:
+    container_name: campaign-service
+    image: ${REGISTRY:-harbor.codefin.dev/lh}/campaign-service:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        - PROTOC_GEN_GO=${PROTOC_GEN_GO:-1.27.1}
+        - PROTOC_VERSION=${PROTOC_VERSION:-3.19.4}
+        - PROTOC_GEN_GO_GRPC=${PROTOC_GEN_GO_GRPC:-1.1.0}
+    depends_on:
+      campaign-migration:
+        condition: service_completed_successfully
+    environment:
+      - PORT=7017
+      - PORT_RESTFUL=7071
+      - PLAN_SERVICE=plan-service:7005
+      - AES_SECRET_KEY=12345678901234561234567890123456
+      - PRIVATE_KEY_PATH=cert/health_check/private.key
+      - PUBLIC_KEY_PATH=cert/health_check/public.key
+      - SESSION_TIMEOUT=15
+      - DB_CON_CAMPAIGN=sqlserver://sa:example-db123@lh-db:1433?database=${db}
+    command: air -c .air.toml
+    # command: tail -f /dev/null
+    ports:
+      - 7017:7017
+      - 7071:7071
+    volumes:
+      - ./:/app
+    networks:
+      - lh_network
+    logging:
+      options:
+        max-size: 10m
+        max-file: "10"
+
+  campaign-migration:
+    container_name: campaign-migration
+    image: ${REGISTRY:-harbor.codefin.dev/lh}/campaign-migration:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: ./Dockerfile.migration
+      args:
+        - IMAGE_URL=${IMAGE_URL:-harbor.codefin.dev}
+        - SERVER=${PROFILE:-local}
+    environment:
+      - DB=sqlserver://sa:example-db123@lh-db:1433?database=${db:-lh_campaign}
+    networks:
+      - lh_network
+    command: [ "-version=${migrate_version:-0}" ]
+    logging:
+      options:
+        max-size: "12m"
+        max-file: "5"
+
+networks:
+  lh_network:
+    external: true

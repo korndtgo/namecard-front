@@ -1,0 +1,31 @@
+FROM debian:buster-slim as builder
+
+ARG PROTOC_VERSION
+
+RUN apt update \
+    && apt install curl unzip -y \
+    && curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip \
+    && unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /tmp \
+    && rm protoc-${PROTOC_VERSION}-linux-x86_64.zip
+
+FROM golang:1.18-alpine as runner 
+WORKDIR /app
+
+ENV GO111MODULE on
+
+RUN apk --no-cache add ca-certificates wget \
+    && wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub \
+    && wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk \
+    && apk add --force-overwrite glibc-2.28-r0.apk \
+    && rm /app/glibc-2.28-r0.apk 
+
+ARG PROTOC_GEN_GO
+ARG PROTOC_GEN_GO_GRPC
+
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v${PROTOC_GEN_GO} \
+    && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v${PROTOC_GEN_GO_GRPC} \
+    && go install github.com/cosmtrek/air@latest 
+
+COPY --from=builder /tmp/bin /usr/local/bin
+COPY --from=builder /tmp/include /usr/local/include
+

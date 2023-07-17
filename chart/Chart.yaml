@@ -1,0 +1,4 @@
+apiVersion: v1
+name: product-service
+description: A Helm chart for Openshift
+version: 0.1.0

@@ -1,0 +1,190 @@
+{{ if eq .Values.profile "local"}}
+apiVersion: apps/v1
+kind: Deployment
+{{ else }}
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+{{ end }}
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ (index .Values.namespace .Values.profile) }}
+  annotations:
+    "meta.helm.sh/release-name": {{ $.Chart.Name | quote }}
+    "meta.helm.sh/release-namespace": {{ index .Values.namespace .Values.profile | quote }}
+  labels:
+    app: {{ .Values.name }}
+    app.kubernetes.io/managed-by: "Helm"
+spec:
+  replicas: 1
+  strategy:
+  {{ if eq .Values.profile "local"}}
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  {{ else }}
+      type: Rolling
+      {{ if ne .Values.profile "dev"}}
+      resources:
+        limits:
+          memory: 300Mi
+          cpu: 100m
+        requests:
+          memory: 150Mi
+          cpu: 50m
+      {{ end }}
+  selector:
+    app: {{ .Values.name }}
+  {{ end }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      containers:
+        - image: "{{ .Values.registry }}/{{ .Values.name }}:{{ .Values.tag }}"
+          {{ if eq .Values.profile "local"}}
+          imagePullPolicy: Never 
+          {{ else }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{ end }}
+          name: {{ .Values.name }}
+          {{ if ne .Values.profile "dev"}}
+          resources:
+            limits:
+              memory: 150Mi
+              cpu:  50m
+            requests:
+              memory: 50Mi
+              cpu: 25m
+          {{ end }}
+          ports:
+          - containerPort: {{ (index .Values.configs .Values.profile).PortRestful }}
+            protocol: TCP
+            name: restful 
+          - containerPort: {{ (index .Values.configs .Values.profile).Port }}
+            protocol: TCP
+            name: grpc
+          env:
+            - name: DB_CON_CAMPAIGN
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: DBConCampaign
+            - name: ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: Port
+            - name: PORT_RESTFUL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: PortRestful
+            - name: LOCALE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: Locale
+            - name: LOG_FORMAT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: LogFormat
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: LogLevel
+            - name: IS_ENABLE_PROTO_V1
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: IsEnableProtoV1            
+            - name: IS_ENABLE_PROTO_V2
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: IsEnableProtoV2
+            - name: IS_DEBUG_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: IsDebugDB
+            - name: AES_SECRET_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: AESSecretKey
+            - name: PUBLIC_KEY_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: PublicKeyPath
+            - name: SESSION_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: SessionTimeout
+            - name: MESSAGING_AMQP_URI 
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.name }}-configmap
+                  key: MessagingAMQPUri
+
+      {{ if eq .Values.profile "dev"}}
+          volumeMounts:
+            - name: {{ (index .Values.claimName .Values.profile).tmp }}
+              mountPath: /app/assets
+      volumes:
+        - name: {{ (index .Values.claimName .Values.profile).tmp }}
+          persistentVolumeClaim:
+            claimName: {{ (index .Values.claimName .Values.profile).tmp }}
+      {{ else if eq .Values.profile "local"}}
+      {{ else }}
+          volumeMounts:
+            - name: {{ (index .Values.claimName .Values.profile).tmp }}
+              mountPath: /app/assets
+      volumes:
+        - name: {{ (index .Values.claimName .Values.profile).tmp }}
+          persistentVolumeClaim:
+            claimName: {{ (index .Values.claimName .Values.profile).tmp }}
+      {{ end }}
+      imagePullSecrets:
+        - name: {{ (index .Values.imagePullSecrets .Values.profile) }}
+
+---
+
+{{ if ne .Values.profile "dev"}}
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.name }}-autoscale 
+  namespace: {{ index .Values.namespace .Values.profile }}
+spec:
+  scaleTargetRef:
+  {{ if eq .Values.profile "local"}}
+    apiVersion: apps/v1 
+    kind: Deployment 
+  {{ else }}
+    apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+  {{ end }}
+    name: {{ .Values.name }} 
+  minReplicas: 1 
+  maxReplicas: 2 
+  metrics: 
+  - type: Resource
+    resource:
+      name: cpu 
+      targetAverageUtilization: 50
+  - type: Resource
+    resource:
+      name: memory 
+      targetAverageUtilization: 70
+{{ end }}
